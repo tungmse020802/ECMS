@@ -1,0 +1,23 @@
+@using ECMS.Web.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    var appUser = await UserManager.GetUserAsync(User);
+
+    <div class="d-flex align-items-center gap-3">
+        <div class="small text-end text-light-subtle">
+            <div class="fw-semibold text-white">@appUser?.FullName</div>
+            <div>@appUser?.UserName</div>
+        </div>
+        <form method="post" asp-page="/Account/Logout">
+            <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+        </form>
+    </div>
+}
+else
+{
+    <a class="btn btn-light btn-sm fw-semibold" asp-page="/Account/Login">Login</a>
+}

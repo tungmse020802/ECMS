@@ -1,0 +1,54 @@
+@page
+@model ECMS.Web.Pages.Attendance.IndexModel
+@{
+    ViewData["Title"] = "Attendance";
+}
+
+<section class="table-shell">
+    <div class="mb-4">
+        <div class="eyebrow">UC05</div>
+        <h1 class="mb-1">Attendance sessions</h1>
+        <p class="text-secondary mb-0">Choose a class session and record each student's attendance status.</p>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table data-table align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Class</th>
+                    <th>Room</th>
+                    <th>Roster</th>
+                    <th>Recorded</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Sessions.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-secondary">No teaching sessions are assigned to you.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <tr>
+                            <td>@session.ClassDate.ToString("dd MMM yyyy")</td>
+                            <td>@session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")</td>
+                            <td>@session.ClassName</td>
+                            <td>@session.RoomName</td>
+                            <td>@session.StudentCount</td>
+                            <td>@session.RecordedCount</td>
+                            <td class="text-end">
+                                <a asp-page="/Attendance/Session" asp-route-id="@session.Id" class="btn btn-primary btn-sm">Take attendance</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

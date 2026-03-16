@@ -1,0 +1,68 @@
+@page
+@model ECMS.Web.Pages.Schedules.CreateModel
+@{
+    ViewData["Title"] = "Create session";
+}
+
+<section class="form-shell">
+    <div class="mb-4">
+        <div class="eyebrow">UC03</div>
+        <h1 class="mb-1">Create schedule session</h1>
+        <p class="text-secondary mb-0">Assign class, room, teacher, and timing while checking for conflicts.</p>
+    </div>
+
+    <form method="post" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.ClassId" class="form-label"></label>
+            <select asp-for="Input.ClassId" asp-items="Model.ClassOptions" class="form-select">
+                <option value="">Select a class</option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.TeacherId" class="form-label"></label>
+            <select asp-for="Input.TeacherId" asp-items="Model.TeacherOptions" class="form-select">
+                <option value="">Select a teacher</option>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Input.ClassDate" class="form-label"></label>
+            <input asp-for="Input.ClassDate" class="form-control" type="date" />
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Input.StartTime" class="form-label"></label>
+            <input asp-for="Input.StartTime" class="form-control" type="time" />
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Input.EndTime" class="form-label"></label>
+            <input asp-for="Input.EndTime" class="form-control" type="time" />
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.RoomId" class="form-label"></label>
+            <select asp-for="Input.RoomId" asp-items="Model.RoomOptions" class="form-select">
+                <option value="">Select a room</option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.Status" class="form-label"></label>
+            <select asp-for="Input.Status" asp-items="Model.StatusOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save session</button>
+            <a asp-page="/Schedules/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

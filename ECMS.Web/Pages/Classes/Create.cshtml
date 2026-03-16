@@ -1,0 +1,56 @@
+@page
+@model ECMS.Web.Pages.Classes.CreateModel
+@{
+    ViewData["Title"] = "Create class";
+}
+
+<section class="form-shell">
+    <div class="mb-4">
+        <div class="eyebrow">UC02</div>
+        <h1 class="mb-1">Create class</h1>
+        <p class="text-secondary mb-0">Define the class name, level, teacher, capacity, and current status.</p>
+    </div>
+
+    <form method="post" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.ClassName" class="form-label"></label>
+            <input asp-for="Input.ClassName" class="form-control" />
+            <span asp-validation-for="Input.ClassName" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.Level" class="form-label"></label>
+            <select asp-for="Input.Level" asp-items="Model.LevelOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.TeacherId" class="form-label"></label>
+            <select asp-for="Input.TeacherId" asp-items="Model.TeacherOptions" class="form-select">
+                <option value="">Select a teacher</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Input.MaxStudents" class="form-label"></label>
+            <input asp-for="Input.MaxStudents" class="form-control" />
+            <span asp-validation-for="Input.MaxStudents" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Input.Status" class="form-label"></label>
+            <select asp-for="Input.Status" asp-items="Model.StatusOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save class</button>
+            <a asp-page="/Classes/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

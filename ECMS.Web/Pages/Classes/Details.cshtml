@@ -1,0 +1,100 @@
+@page "{id:int}"
+@model ECMS.Web.Pages.Classes.DetailsModel
+@{
+    ViewData["Title"] = "Class details";
+}
+
+<section class="content-card mb-4">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+            <div class="eyebrow">Class profile</div>
+            <h1 class="mb-1">@Model.Class!.ClassName</h1>
+            <p class="text-secondary mb-0">@Model.Class.Level with @Model.Class.TeacherName</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Classes/Edit" asp-route-id="@Model.Class.Id" class="btn btn-outline-primary">Edit</a>
+            <a asp-page="/Classes/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Status</span>
+                <strong class="fs-5">@Model.Class.Status</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Students</span>
+                <strong class="fs-5">@Model.Class.StudentCount / @Model.Class.MaxStudents</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Next session</span>
+                <strong class="fs-6">@(Model.Class.NextSessionDate?.ToString("dd MMM yyyy") ?? "Not scheduled")</strong>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-lg-6">
+        <div class="table-shell h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title mb-0">Roster</h2>
+                <span class="text-secondary small">@Model.Class.StudentCount students</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in Model.Class.Students)
+                        {
+                            <tr>
+                                <td>@student.StudentCode</td>
+                                <td>@student.FullName</td>
+                                <td>@student.Email</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="table-shell h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title mb-0">Recent timetable</h2>
+                <a asp-page="/Schedules/Index" asp-route-classId="@Model.Class.Id" class="btn btn-outline-primary btn-sm">Open timetable</a>
+            </div>
+            <div class="schedule-stack">
+                @foreach (var session in Model.Class.Sessions)
+                {
+                    <div class="schedule-item">
+                        <div>
+                            <strong>@session.ClassDate.ToString("dd MMM yyyy")</strong>
+                            <div class="text-secondary small">@session.RoomName with @session.TeacherName</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold">@session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")</div>
+                            <span class="pill-status @session.Status.ToString().ToLowerInvariant()">@session.Status</span>
+                        </div>
+                    </div>
+                }
+                @if (Model.Class.Sessions.Count == 0)
+                {
+                    <p class="text-secondary mb-0">No schedule sessions have been created for this class yet.</p>
+                }
+            </div>
+        </div>
+    </div>
+</section>

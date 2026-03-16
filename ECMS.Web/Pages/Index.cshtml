@@ -1,0 +1,99 @@
+﻿@page
+@model ECMS.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+@if (!Model.IsAuthenticated)
+{
+    <section class="hero">
+        <div class="hero-copy">
+            <div class="eyebrow">ECMS</div>
+            <h1>English Center Management System</h1>
+            <p class="lead">A compact Razor Pages application for class management, schedule planning, attendance tracking, and score monitoring.</p>
+            <div class="d-flex flex-wrap gap-3 mt-4">
+                <a asp-page="/Account/Login" class="btn btn-primary btn-lg">Enter the system</a>
+                <a asp-page="/Schedules/Index" class="btn btn-outline-primary btn-lg">Preview timetable</a>
+            </div>
+        </div>
+        <div class="hero-panel">
+            <div class="panel-label">Scope</div>
+            <ul class="list-unstyled mb-0">
+                <li>Class management</li>
+                <li>Teaching schedule management</li>
+                <li>Attendance for teachers</li>
+                <li>Score entry and scoreboards</li>
+            </ul>
+        </div>
+    </section>
+}
+else
+{
+    <section class="dashboard-head">
+        <div>
+            <div class="eyebrow">Overview</div>
+            <h1>Welcome back, @Model.DisplayName</h1>
+            <p class="text-secondary mb-0">Your workspace is filtered automatically based on your role.</p>
+        </div>
+        <div class="stat-strip">
+            <div class="stat-card">
+                <span>Classes</span>
+                <strong>@Model.ActiveClassCount</strong>
+            </div>
+            <div class="stat-card">
+                <span>Students</span>
+                <strong>@Model.StudentCount</strong>
+            </div>
+            <div class="stat-card">
+                <span>This week</span>
+                <strong>@Model.WeeklySessionCount</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="row g-4 mt-1">
+        @foreach (var card in Model.DashboardCards)
+        {
+            <div class="col-md-6 col-xl-3">
+                <a class="module-card text-decoration-none" asp-page="@card.PagePath">
+                    <div class="module-kicker">@card.Caption</div>
+                    <h2>@card.Title</h2>
+                    <p>@card.Description</p>
+                </a>
+            </div>
+        }
+    </section>
+
+    <section class="content-card mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <div class="eyebrow">Upcoming</div>
+                <h2 class="section-title mb-0">Next sessions</h2>
+            </div>
+            <a asp-page="/Schedules/Index" class="btn btn-outline-primary btn-sm">Open full timetable</a>
+        </div>
+
+        @if (Model.UpcomingSchedules.Count == 0)
+        {
+            <p class="text-secondary mb-0">No upcoming sessions are assigned yet.</p>
+        }
+        else
+        {
+            <div class="schedule-stack">
+                @foreach (var session in Model.UpcomingSchedules)
+                {
+                    <div class="schedule-item">
+                        <div>
+                            <strong>@session.ClassName</strong>
+                            <div class="text-secondary small">@session.TeacherName in room @session.RoomName</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold">@session.ClassDate.ToString("dd MMM yyyy")</div>
+                            <div class="text-secondary small">@session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+}

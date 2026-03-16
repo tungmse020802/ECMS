@@ -1,0 +1,52 @@
+@page
+@model ECMS.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<section class="auth-shell">
+    <div class="auth-card">
+        <div class="eyebrow">ECMS</div>
+        <h1>Sign in to the learning center portal</h1>
+        <p class="text-secondary mb-4">Use your username and password to enter the system based on your assigned role.</p>
+
+        <form method="post" class="row g-3">
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+            <div class="col-12">
+                <label asp-for="Input.UserName" class="form-label"></label>
+                <input asp-for="Input.UserName" class="form-control" autocomplete="username" />
+                <span asp-validation-for="Input.UserName" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Input.Password" class="form-label"></label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12 form-check">
+                <input asp-for="Input.RememberMe" class="form-check-input" />
+                <label asp-for="Input.RememberMe" class="form-check-label"></label>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary w-100">Sign in</button>
+            </div>
+        </form>
+
+        <div class="demo-block mt-4">
+            <div class="demo-item"><strong>Admin:</strong> <code>admin / Admin@123</code></div>
+            <div class="demo-item"><strong>Staff:</strong> <code>staff / Staff@123</code></div>
+            <div class="demo-item"><strong>Teacher:</strong> <code>teacher.alice / Teacher@123</code></div>
+            <div class="demo-item"><strong>Student:</strong> <code>student.tom / Student@123</code></div>
+        </div>
+    </div>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

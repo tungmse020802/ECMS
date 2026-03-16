@@ -1,0 +1,70 @@
+@page
+@model ECMS.Web.Pages.Scores.IndexModel
+@{
+    ViewData["Title"] = "Scores";
+}
+
+<section class="table-shell">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="eyebrow">UC07</div>
+            <h1 class="mb-1">Scoreboard</h1>
+            <p class="text-secondary mb-0">@Model.BoardDescription</p>
+        </div>
+        @if (User.IsInRole(ApplicationRoles.Teacher))
+        {
+            <a asp-page="/Scores/Entry" class="btn btn-primary">Enter scores</a>
+        }
+    </div>
+
+    <form method="get" class="filter-bar mb-4">
+        <div>
+            <label asp-for="ClassId" class="form-label">Class</label>
+            <select asp-for="ClassId" asp-items="Model.ClassOptions" class="form-select">
+                <option value="">All accessible classes</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-outline-primary">Apply filter</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table data-table align-middle">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Student</th>
+                    <th>Homework</th>
+                    <th>Quiz</th>
+                    <th>Midterm</th>
+                    <th>Final</th>
+                    <th>Average</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-secondary">No score data is available for the selected view.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.ClassName</td>
+                            <td>@row.StudentName</td>
+                            <td>@(row.Homework?.ToString("0.##") ?? "-")</td>
+                            <td>@(row.Quiz?.ToString("0.##") ?? "-")</td>
+                            <td>@(row.Midterm?.ToString("0.##") ?? "-")</td>
+                            <td>@(row.Final?.ToString("0.##") ?? "-")</td>
+                            <td><strong>@(row.Average?.ToString("0.##") ?? "-")</strong></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

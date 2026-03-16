@@ -1,0 +1,51 @@
+@page
+@model ECMS.Web.Pages.Classes.IndexModel
+@{
+    ViewData["Title"] = "Classes";
+}
+
+<section class="table-shell">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="eyebrow">UC02</div>
+            <h1 class="mb-1">Class management</h1>
+            <p class="text-secondary mb-0">Create classes, assign teachers, and monitor roster size.</p>
+        </div>
+        <a asp-page="/Classes/Create" class="btn btn-primary">Create class</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table data-table align-middle">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Level</th>
+                    <th>Teacher</th>
+                    <th>Students</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Classes)
+                {
+                    var statusClass = item.Status.ToString().ToLowerInvariant();
+                    <tr>
+                        <td>
+                            <strong>@item.ClassName</strong>
+                            <div class="small text-secondary">ID: @item.Id</div>
+                        </td>
+                        <td>@item.Level</td>
+                        <td>@item.TeacherName</td>
+                        <td>@item.StudentCount / @item.MaxStudents</td>
+                        <td><span class="pill-status @statusClass">@item.Status</span></td>
+                        <td class="text-end">
+                            <a asp-page="/Classes/Details" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm">Details</a>
+                            <a asp-page="/Classes/Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
