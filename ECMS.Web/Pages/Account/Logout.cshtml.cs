@@ -9,9 +9,20 @@ namespace ECMS.Web.Pages.Account;
 [Authorize]
 public class LogoutModel(SignInManager<ApplicationUser> signInManager) : PageModel
 {
-    public async Task<IActionResult> OnPostAsync()
+    public IActionResult OnGet()
+    {
+        return RedirectToPage("/Index");
+    }
+
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         await signInManager.SignOutAsync();
-        return RedirectToPage("/Account/Login");
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToPage("/Index");
     }
 }
