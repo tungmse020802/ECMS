@@ -18,7 +18,7 @@ Out of scope:
 
 ## Tech Stack
 
-- ASP.NET Core Razor Pages (`net10.0`)
+- ASP.NET Core Razor Pages (`net8.0`)
 - Entity Framework Core
 - SQL Server
 - ASP.NET Core Identity with hashed passwords and role-based authorization
