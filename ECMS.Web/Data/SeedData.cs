@@ -18,6 +18,8 @@ public static class SeedData
         try
         {
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            logger.LogInformation("Starting automatic database migration and seed process.");
             await context.Database.MigrateAsync();
 
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
@@ -266,12 +268,18 @@ public static class SeedData
 
                 await context.SaveChangesAsync();
             }
+
+            logger.LogInformation("Database migration and seed process completed successfully.");
         }
         catch (Exception exception)
         {
-            logger.LogWarning(
+            logger.LogError(
                 exception,
-                "Database initialization was skipped. Configure SQL Server and run migrations when the database is available.");
+                "Automatic database initialization failed. Please verify the SQL Server connection string and database permissions.");
+
+            throw new InvalidOperationException(
+                "Automatic database initialization failed. Update the SQL Server configuration and run the application again.",
+                exception);
         }
     }
 

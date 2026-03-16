@@ -33,19 +33,21 @@ Out of scope:
 ## Setup
 
 1. Update the SQL Server connection string in [`appsettings.json`](/workspaces/ECMS/ECMS.Web/appsettings.json).
-2. Apply the initial migration:
-
-```bash
-dotnet dotnet-ef database update --project ECMS.Web/ECMS.Web.csproj
-```
-
-3. Run the web app:
+For local development, you can also override it in [`appsettings.Development.json`](/workspaces/ECMS/ECMS.Web/appsettings.Development.json).
+2. Run the web app:
 
 ```bash
 dotnet run --project ECMS.Web/ECMS.Web.csproj
 ```
 
-When SQL Server is reachable, the app also attempts to apply migrations and seed demo data on startup.
+When the application starts, it will automatically:
+
+- check whether the target database exists
+- create the database if it does not exist
+- apply pending EF Core migrations
+- seed demo roles, users, classes, schedules, attendance, and scores
+
+You do not need to run `dotnet ef database update` manually for normal setup.
 
 ## Demo Accounts
 
