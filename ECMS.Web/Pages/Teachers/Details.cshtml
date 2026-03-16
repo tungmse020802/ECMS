@@ -1,0 +1,115 @@
+@page "{id:int}"
+@model ECMS.Web.Pages.Teachers.DetailsModel
+@{
+    ViewData["Title"] = "Teacher details";
+}
+
+<section class="content-card mb-4">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+            <div class="eyebrow">Teacher profile</div>
+            <h1 class="mb-1">@Model.Teacher!.FullName</h1>
+            <p class="text-secondary mb-0">
+                @(Model.Teacher.Email ?? "Email not set")
+                @if (!string.IsNullOrWhiteSpace(Model.Teacher.PortalUserName))
+                {
+                    <span>· Linked account: @Model.Teacher.PortalUserName</span>
+                }
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Teachers/Edit" asp-route-id="@Model.Teacher.Id" class="btn btn-outline-primary">Edit</a>
+            <a asp-page="/Teachers/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Assigned classes</span>
+                <strong class="fs-5">@Model.Teacher.ClassCount</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Upcoming sessions</span>
+                <strong class="fs-5">@Model.Teacher.UpcomingSessionCount</strong>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-lg-6">
+        <div class="table-shell h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title mb-0">Assigned classes</h2>
+                <span class="text-secondary small">@Model.Teacher.ClassCount classes</span>
+            </div>
+
+            @if (Model.Teacher.Classes.Count == 0)
+            {
+                <p class="text-secondary mb-0">No classes are assigned to this teacher yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Students</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Teacher.Classes)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-page="/Classes/Details" asp-route-id="@item.Id" class="fw-semibold text-decoration-none">@item.ClassName</a>
+                                        <div class="small text-secondary">@item.Level</div>
+                                    </td>
+                                    <td>@item.StudentCount / @item.MaxStudents</td>
+                                    <td><span class="pill-status @item.Status.ToString().ToLowerInvariant()">@item.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="table-shell h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title mb-0">Upcoming sessions</h2>
+                <a asp-page="/Schedules/Index" class="btn btn-outline-primary btn-sm">Open timetable</a>
+            </div>
+
+            @if (Model.Teacher.UpcomingSessions.Count == 0)
+            {
+                <p class="text-secondary mb-0">No upcoming sessions are scheduled for this teacher.</p>
+            }
+            else
+            {
+                <div class="schedule-stack">
+                    @foreach (var session in Model.Teacher.UpcomingSessions)
+                    {
+                        <div class="schedule-item">
+                            <div>
+                                <a asp-page="/Classes/Details" asp-route-id="@session.ClassId" class="fw-semibold text-decoration-none">@session.ClassName</a>
+                                <div class="text-secondary small">@session.RoomName</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-semibold">@session.ClassDate.ToString("dd MMM yyyy")</div>
+                                <div class="text-secondary small">@session.StartTime.ToString(@"hh\:mm") - @session.EndTime.ToString(@"hh\:mm")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>

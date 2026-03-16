@@ -117,6 +117,8 @@ public class IndexModel(
             DashboardCards =
             [
                 new DashboardCard("Classes", "UC02", "Create classes, assign teachers, and review rosters.", "/Classes/Index"),
+                new DashboardCard("Teachers", "Profiles", "Maintain teacher records and link teaching accounts.", "/Teachers/Index"),
+                new DashboardCard("Students", "Roster", "Manage student profiles and enrollments by class.", "/Students/Index"),
                 new DashboardCard("Timetable Mgmt", "UC03", "Create, update, and cancel teaching sessions.", "/Schedules/Create"),
                 new DashboardCard("View Timetable", "UC04", "Browse classes in day or week timetable format.", "/Schedules/Index"),
                 new DashboardCard("Scoreboard", "UC07", "Review scoreboards for every class and student.", "/Scores/Index")

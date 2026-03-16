@@ -1,0 +1,50 @@
+@page
+@model ECMS.Web.Pages.Teachers.IndexModel
+@{
+    ViewData["Title"] = "Teachers";
+}
+
+<section class="table-shell">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="eyebrow">Profiles</div>
+            <h1 class="mb-1">Teacher management</h1>
+            <p class="text-secondary mb-0">Maintain teacher records, linked portal accounts, and teaching assignments.</p>
+        </div>
+        <a asp-page="/Teachers/Create" class="btn btn-primary">Add teacher</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table data-table align-middle">
+            <thead>
+                <tr>
+                    <th>Teacher</th>
+                    <th>Email</th>
+                    <th>Portal account</th>
+                    <th>Classes</th>
+                    <th>Upcoming sessions</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Teachers)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.FullName</strong>
+                            <div class="small text-secondary">ID: @item.Id</div>
+                        </td>
+                        <td>@(item.Email ?? "Not set")</td>
+                        <td>@(item.PortalUserName ?? "Unlinked")</td>
+                        <td>@item.ClassCount</td>
+                        <td>@item.UpcomingSessionCount</td>
+                        <td class="text-end">
+                            <a asp-page="/Teachers/Details" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm">Details</a>
+                            <a asp-page="/Teachers/Edit" asp-route-id="@item.Id" class="btn btn-outline-secondary btn-sm">Edit</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

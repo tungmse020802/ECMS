@@ -24,6 +24,7 @@ public class IndexModel(ApplicationDbContext context) : PageModel
                 Id = courseClass.Id,
                 ClassName = courseClass.ClassName,
                 Level = courseClass.Level,
+                TeacherId = courseClass.TeacherId,
                 TeacherName = courseClass.Teacher != null ? courseClass.Teacher.FullName : "Unassigned",
                 MaxStudents = courseClass.MaxStudents,
                 StudentCount = courseClass.StudentClasses.Count,
@@ -39,6 +40,8 @@ public class IndexModel(ApplicationDbContext context) : PageModel
         public string ClassName { get; set; } = string.Empty;
 
         public EnglishLevel Level { get; set; }
+
+        public int? TeacherId { get; set; }
 
         public string TeacherName { get; set; } = string.Empty;
 

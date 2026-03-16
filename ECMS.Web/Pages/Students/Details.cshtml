@@ -1,0 +1,128 @@
+@page "{id:int}"
+@model ECMS.Web.Pages.Students.DetailsModel
+@{
+    ViewData["Title"] = "Student details";
+}
+
+<section class="content-card mb-4">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+            <div class="eyebrow">Student profile</div>
+            <h1 class="mb-1">@Model.Student!.FullName</h1>
+            <p class="text-secondary mb-0">
+                @Model.Student.StudentCode
+                @if (!string.IsNullOrWhiteSpace(Model.Student.Email))
+                {
+                    <span>· @Model.Student.Email</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Student.PortalUserName))
+                {
+                    <span>· Linked account: @Model.Student.PortalUserName</span>
+                }
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Students/Edit" asp-route-id="@Model.Student.Id" class="btn btn-outline-primary">Edit</a>
+            <a asp-page="/Students/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Enrolled classes</span>
+                <strong class="fs-5">@Model.Student.EnrollmentCount</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <span>Recorded scores</span>
+                <strong class="fs-5">@Model.Student.ScoreCount</strong>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-lg-6">
+        <div class="table-shell h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title mb-0">Enrolled classes</h2>
+                <span class="text-secondary small">@Model.Student.EnrollmentCount classes</span>
+            </div>
+
+            @if (Model.Student.EnrolledClasses.Count == 0)
+            {
+                <p class="text-secondary mb-0">This student is not enrolled in any classes yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Teacher</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Student.EnrolledClasses)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-page="/Classes/Details" asp-route-id="@item.ClassId" class="fw-semibold text-decoration-none">@item.ClassName</a>
+                                        <div class="small text-secondary">@item.Level · Enrolled @item.EnrolledAtUtc.ToString("dd MMM yyyy")</div>
+                                    </td>
+                                    <td>@item.TeacherName</td>
+                                    <td><span class="pill-status @item.Status.ToString().ToLowerInvariant()">@item.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="table-shell h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title mb-0">Recent scores</h2>
+                <a asp-page="/Scores/Index" class="btn btn-outline-primary btn-sm">Open scoreboard</a>
+            </div>
+
+            @if (Model.Student.RecentScores.Count == 0)
+            {
+                <p class="text-secondary mb-0">No scores have been recorded for this student yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table data-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Student.RecentScores)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-page="/Classes/Details" asp-route-id="@item.ClassId" class="fw-semibold text-decoration-none">@item.ClassName</a>
+                                        <div class="small text-secondary">@item.RecordedAtUtc.ToString("dd MMM yyyy")</div>
+                                    </td>
+                                    <td>@item.ScoreTypeName</td>
+                                    <td>@item.Value.ToString("0.##")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>

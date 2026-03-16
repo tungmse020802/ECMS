@@ -5,6 +5,7 @@ ECMS is a compact English Center Management System built with ASP.NET Core Razor
 ## Scope
 
 - System login with role-based access
+- Teacher and student profile management
 - Class management
 - Schedule management with room and teacher conflict checks
 - Attendance tracking for teachers
@@ -59,6 +60,8 @@ You do not need to run `dotnet ef database update` manually for normal setup.
 ## Main Modules
 
 - Admin/Staff
+  - Teachers
+  - Students
   - Classes
   - Schedule management
   - Scoreboard view

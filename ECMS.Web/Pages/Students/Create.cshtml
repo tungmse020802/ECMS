@@ -1,0 +1,95 @@
+@page
+@model ECMS.Web.Pages.Students.CreateModel
+@{
+    ViewData["Title"] = "Add student";
+}
+
+<section class="form-shell">
+    <div class="mb-4">
+        <div class="eyebrow">Roster</div>
+        <h1 class="mb-1">Add student</h1>
+        <p class="text-secondary mb-0">Create a student profile, link a student login if needed, and enroll the student in classes.</p>
+    </div>
+
+    <form method="post" class="row g-4">
+        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.StudentCode" class="form-label"></label>
+            <input asp-for="Input.StudentCode" class="form-control" />
+            <span asp-validation-for="Input.StudentCode" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.FullName" class="form-label"></label>
+            <input asp-for="Input.FullName" class="form-control" />
+            <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.Email" class="form-label"></label>
+            <input asp-for="Input.Email" class="form-control" />
+            <span asp-validation-for="Input.Email" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.ApplicationUserId" class="form-label"></label>
+            <select asp-for="Input.ApplicationUserId" asp-items="Model.AccountOptions" class="form-select">
+                <option value="">No linked portal account</option>
+            </select>
+            <span asp-validation-for="Input.ApplicationUserId" class="text-danger small"></span>
+        </div>
+
+        <div class="col-12">
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="section-title mb-1">Class enrollments</h2>
+                        <p class="text-secondary mb-0">Choose the classes this student should appear in.</p>
+                    </div>
+                </div>
+
+                <span asp-validation-for="Input.SelectedClassIds" class="text-danger small d-block mb-3"></span>
+
+                <div class="row g-3">
+                    @foreach (var option in Model.ClassOptions)
+                    {
+                        <div class="col-lg-6">
+                            <label class="w-100 border rounded-3 p-3">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="Input.SelectedClassIds"
+                                           value="@option.Id"
+                                           checked="@option.IsSelected"
+                                           disabled="@(option.IsFull && !option.IsSelected)" />
+                                    <span class="form-check-label fw-semibold">@option.ClassName</span>
+                                </div>
+                                <div class="small text-secondary mt-2">
+                                    @option.Level · @option.TeacherName
+                                </div>
+                                <div class="small text-secondary">
+                                    @option.StudentCount / @option.MaxStudents students
+                                    @if (option.IsFull && !option.IsSelected)
+                                    {
+                                        <span>· Full</span>
+                                    }
+                                </div>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save student</button>
+            <a asp-page="/Students/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

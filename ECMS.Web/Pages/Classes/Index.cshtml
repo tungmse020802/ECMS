@@ -36,7 +36,16 @@
                             <div class="small text-secondary">ID: @item.Id</div>
                         </td>
                         <td>@item.Level</td>
-                        <td>@item.TeacherName</td>
+                        <td>
+                            @if (item.TeacherId.HasValue)
+                            {
+                                <a asp-page="/Teachers/Details" asp-route-id="@item.TeacherId.Value" class="text-decoration-none">@item.TeacherName</a>
+                            }
+                            else
+                            {
+                                @item.TeacherName
+                            }
+                        </td>
                         <td>@item.StudentCount / @item.MaxStudents</td>
                         <td><span class="pill-status @statusClass">@item.Status</span></td>
                         <td class="text-end">

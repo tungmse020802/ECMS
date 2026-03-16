@@ -37,6 +37,7 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
             Id = courseClass.Id,
             ClassName = courseClass.ClassName,
             Level = courseClass.Level,
+            TeacherId = courseClass.TeacherId,
             TeacherName = courseClass.Teacher != null ? courseClass.Teacher.FullName : "Unassigned",
             MaxStudents = courseClass.MaxStudents,
             StudentCount = courseClass.StudentClasses.Count,
@@ -51,6 +52,7 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
                 .OrderBy(studentClass => studentClass.Student.FullName)
                 .Select(studentClass => new StudentItem
                 {
+                    Id = studentClass.StudentId,
                     StudentCode = studentClass.Student.StudentCode,
                     FullName = studentClass.Student.FullName,
                     Email = studentClass.Student.Email
@@ -86,6 +88,8 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
 
         public EnglishLevel Level { get; set; }
 
+        public int? TeacherId { get; set; }
+
         public string TeacherName { get; set; } = string.Empty;
 
         public int MaxStudents { get; set; }
@@ -103,6 +107,8 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
 
     public class StudentItem
     {
+        public int Id { get; set; }
+
         public string StudentCode { get; set; } = string.Empty;
 
         public string FullName { get; set; } = string.Empty;

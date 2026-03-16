@@ -34,6 +34,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ScheduleConflictService>();
 builder.Services.AddScoped<UserProfileService>();
+builder.Services.AddScoped<ProfileAccountLookupService>();
 
 var app = builder.Build();
 

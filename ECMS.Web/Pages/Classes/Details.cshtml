@@ -9,7 +9,17 @@
         <div>
             <div class="eyebrow">Class profile</div>
             <h1 class="mb-1">@Model.Class!.ClassName</h1>
-            <p class="text-secondary mb-0">@Model.Class.Level with @Model.Class.TeacherName</p>
+            <p class="text-secondary mb-0">
+                @Model.Class.Level with
+                @if (Model.Class.TeacherId.HasValue)
+                {
+                    <a asp-page="/Teachers/Details" asp-route-id="@Model.Class.TeacherId.Value" class="text-decoration-none">@Model.Class.TeacherName</a>
+                }
+                else
+                {
+                    @Model.Class.TeacherName
+                }
+            </p>
         </div>
         <div class="d-flex gap-2">
             <a asp-page="/Classes/Edit" asp-route-id="@Model.Class.Id" class="btn btn-outline-primary">Edit</a>
@@ -60,7 +70,9 @@
                         {
                             <tr>
                                 <td>@student.StudentCode</td>
-                                <td>@student.FullName</td>
+                                <td>
+                                    <a asp-page="/Students/Details" asp-route-id="@student.Id" class="text-decoration-none">@student.FullName</a>
+                                </td>
                                 <td>@student.Email</td>
                             </tr>
                         }
