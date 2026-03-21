@@ -14,10 +14,17 @@ namespace ECMS.Web.Pages.Schedules;
 [Authorize]
 public class IndexModel(
     ApplicationDbContext context,
-    UserProfileService userProfileService) : PageModel
+    UserProfileService userProfileService,
+    ScheduleDateTimeService scheduleDateTimeService) : PageModel
 {
     [BindProperty(SupportsGet = true)]
     public DateTime? Date { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DateTime? FromDate { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public DateTime? ToDate { get; set; }
 
     [BindProperty(SupportsGet = true)]
     public string ViewMode { get; set; } = "Week";
@@ -25,13 +32,29 @@ public class IndexModel(
     [BindProperty(SupportsGet = true)]
     public int? ClassId { get; set; }
 
+    [TempData]
+    public string? StatusMessage { get; set; }
+
+    [TempData]
+    public string? ErrorMessage { get; set; }
+
     public bool CanManageSchedule => User.IsInRole(ApplicationRoles.Admin) || User.IsInRole(ApplicationRoles.Staff);
 
     public string BoardDescription { get; private set; } = "Browse schedules using date, week, and class filters.";
 
     public string RangeLabel { get; private set; } = string.Empty;
 
+    public string ActiveTimeZoneLabel { get; private set; } = string.Empty;
+
+    public string MinSelectableDate { get; private set; } = string.Empty;
+
+    public DateTime LocalToday { get; private set; }
+
     public bool IsWeekView => ViewMode == "Week";
+
+    public bool IsRangeView { get; private set; }
+
+    public bool CanGoPrevious { get; private set; }
 
     public List<DateTime> VisibleDates { get; private set; } = [];
 
@@ -51,6 +74,8 @@ public class IndexModel(
     public async Task<IActionResult> OnPostCancelAsync(
         int id,
         DateTime? date,
+        DateTime? fromDate,
+        DateTime? toDate,
         string? viewMode,
         int? classId,
         CancellationToken cancellationToken)
@@ -66,21 +91,71 @@ public class IndexModel(
             return NotFound();
         }
 
+        if (scheduleDateTimeService.NormalizeUtc(schedule.StartAtUtc) <= DateTime.UtcNow)
+        {
+            ErrorMessage = "Only future sessions can be cancelled.";
+            return RedirectToCurrentView(date, fromDate, toDate, viewMode, classId);
+        }
+
         schedule.Status = ScheduleStatus.Cancelled;
         await context.SaveChangesAsync(cancellationToken);
+        StatusMessage = "Schedule cancelled successfully.";
 
-        return RedirectToPage(new
+        return RedirectToCurrentView(date, fromDate, toDate, viewMode, classId);
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(
+        int id,
+        DateTime? date,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? viewMode,
+        int? classId,
+        CancellationToken cancellationToken)
+    {
+        if (!CanManageSchedule)
         {
-            Date = date?.ToString("yyyy-MM-dd"),
-            ViewMode = viewMode ?? "Week",
-            ClassId = classId
-        });
+            return Forbid();
+        }
+
+        var schedule = await context.Schedules
+            .Include(item => item.Attendances)
+            .FirstOrDefaultAsync(item => item.Id == id, cancellationToken);
+
+        if (schedule is null)
+        {
+            return NotFound();
+        }
+
+        if (scheduleDateTimeService.NormalizeUtc(schedule.StartAtUtc) <= DateTime.UtcNow)
+        {
+            ErrorMessage = "Only future sessions can be deleted.";
+            return RedirectToCurrentView(date, fromDate, toDate, viewMode, classId);
+        }
+
+        context.Schedules.Remove(schedule);
+        await context.SaveChangesAsync(cancellationToken);
+
+        StatusMessage = "Schedule deleted successfully.";
+        return RedirectToCurrentView(date, fromDate, toDate, viewMode, classId);
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        var selectedDate = (Date ?? DateTime.UtcNow.Date).Date;
+        var timeZone = scheduleDateTimeService.ResolveTimeZone(HttpContext);
+        var localToday = scheduleDateTimeService.GetLocalToday(timeZone);
+        var selectedDate = (Date ?? localToday).Date;
+
+        if (selectedDate < localToday)
+        {
+            selectedDate = localToday;
+        }
+
+        Date = selectedDate;
         ViewMode = string.Equals(ViewMode, "Day", StringComparison.OrdinalIgnoreCase) ? "Day" : "Week";
+        ActiveTimeZoneLabel = scheduleDateTimeService.GetTimeZoneLabel(timeZone);
+        MinSelectableDate = localToday.ToString("yyyy-MM-dd");
+        LocalToday = localToday;
 
         var weekOffset = ((7 + (int)selectedDate.DayOfWeek - (int)DayOfWeek.Monday) % 7);
         var weekStart = selectedDate.AddDays(-weekOffset);
@@ -136,40 +211,108 @@ public class IndexModel(
             scheduleQuery = scheduleQuery.Where(schedule => schedule.ClassId == ClassId.Value);
         }
 
-        if (ViewMode == "Day")
+        if (FromDate.HasValue || ToDate.HasValue)
         {
-            scheduleQuery = scheduleQuery.Where(schedule => schedule.ClassDate == selectedDate);
+            var rangeStartLocal = (FromDate ?? selectedDate).Date;
+            if (rangeStartLocal < localToday)
+            {
+                rangeStartLocal = localToday;
+            }
+
+            var rangeEndLocal = (ToDate ?? rangeStartLocal).Date;
+            if (rangeEndLocal < rangeStartLocal)
+            {
+                rangeEndLocal = rangeStartLocal;
+            }
+
+            FromDate = rangeStartLocal;
+            ToDate = rangeEndLocal;
+            IsRangeView = true;
+
+            ApplyExplicitRange(
+                scheduleQuery,
+                timeZone,
+                rangeStartLocal,
+                rangeEndLocal,
+                out scheduleQuery,
+                out var rangeLabel,
+                out var visibleDates);
+
+            RangeLabel = rangeLabel;
+            VisibleDates = visibleDates;
+            PreviousRangeText = string.Empty;
+            NextRangeText = string.Empty;
+            CanGoPrevious = false;
+        }
+        else if (ViewMode == "Day")
+        {
+            var (rangeStartUtc, rangeEndUtc) = scheduleDateTimeService.GetUtcRangeForLocalDates(selectedDate, selectedDate, timeZone);
+            scheduleQuery = scheduleQuery.Where(schedule => schedule.StartAtUtc >= rangeStartUtc && schedule.StartAtUtc < rangeEndUtc);
             RangeLabel = selectedDate.ToString("dd MMM yyyy");
             VisibleDates = [selectedDate];
             PreviousRangeText = selectedDate.AddDays(-1).ToString("yyyy-MM-dd");
             NextRangeText = selectedDate.AddDays(1).ToString("yyyy-MM-dd");
+            CanGoPrevious = selectedDate > localToday;
         }
         else
         {
-            scheduleQuery = scheduleQuery.Where(schedule => schedule.ClassDate >= weekStart && schedule.ClassDate <= weekEnd);
-            RangeLabel = $"{weekStart:dd MMM yyyy} - {weekEnd:dd MMM yyyy}";
-            VisibleDates = Enumerable.Range(0, 7)
-                .Select(offset => weekStart.AddDays(offset))
+            var visibleStart = weekStart < localToday ? localToday : weekStart;
+            var (rangeStartUtc, rangeEndUtc) = scheduleDateTimeService.GetUtcRangeForLocalDates(visibleStart, weekEnd, timeZone);
+
+            scheduleQuery = scheduleQuery.Where(schedule => schedule.StartAtUtc >= rangeStartUtc && schedule.StartAtUtc < rangeEndUtc);
+            RangeLabel = $"{visibleStart:dd MMM yyyy} - {weekEnd:dd MMM yyyy}";
+            VisibleDates = Enumerable.Range(0, (weekEnd - visibleStart).Days + 1)
+                .Select(offset => visibleStart.AddDays(offset))
                 .ToList();
             PreviousRangeText = weekStart.AddDays(-7).ToString("yyyy-MM-dd");
             NextRangeText = weekStart.AddDays(7).ToString("yyyy-MM-dd");
+            CanGoPrevious = weekStart > localToday;
         }
 
-        Sessions = await scheduleQuery
-            .OrderBy(schedule => schedule.ClassDate)
-            .ThenBy(schedule => schedule.StartTime)
-            .Select(schedule => new ScheduleListItem
-            {
-                Id = schedule.Id,
-                ClassId = schedule.ClassId,
-                ClassName = schedule.Class.ClassName,
-                ClassDate = schedule.ClassDate,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                RoomName = schedule.Room.RoomName,
-                TeacherName = schedule.Teacher.FullName,
-                Status = schedule.Status
-            })
+        var schedules = await scheduleQuery
+            .OrderBy(schedule => schedule.StartAtUtc)
+            .ThenBy(schedule => schedule.EndAtUtc)
             .ToListAsync(cancellationToken);
+
+        Sessions = schedules
+            .Select(schedule => scheduleDateTimeService.BuildScheduleListItem(
+                schedule,
+                timeZone,
+                CanManageSchedule && scheduleDateTimeService.NormalizeUtc(schedule.StartAtUtc) > DateTime.UtcNow))
+            .ToList();
+    }
+
+    private void ApplyExplicitRange(
+        IQueryable<Schedule> sourceQuery,
+        TimeZoneInfo timeZone,
+        DateTime rangeStartLocal,
+        DateTime rangeEndLocal,
+        out IQueryable<Schedule> filteredQuery,
+        out string rangeLabel,
+        out List<DateTime> visibleDates)
+    {
+        var (rangeStartUtc, rangeEndUtc) = scheduleDateTimeService.GetUtcRangeForLocalDates(rangeStartLocal, rangeEndLocal, timeZone);
+        filteredQuery = sourceQuery.Where(schedule => schedule.StartAtUtc >= rangeStartUtc && schedule.StartAtUtc < rangeEndUtc);
+        rangeLabel = $"{rangeStartLocal:dd MMM yyyy} - {rangeEndLocal:dd MMM yyyy}";
+        visibleDates = Enumerable.Range(0, (rangeEndLocal - rangeStartLocal).Days + 1)
+            .Select(offset => rangeStartLocal.AddDays(offset))
+            .ToList();
+    }
+
+    private RedirectToPageResult RedirectToCurrentView(
+        DateTime? date,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string? viewMode,
+        int? classId)
+    {
+        return RedirectToPage(new
+        {
+            Date = date?.ToString("yyyy-MM-dd"),
+            FromDate = fromDate?.ToString("yyyy-MM-dd"),
+            ToDate = toDate?.ToString("yyyy-MM-dd"),
+            ViewMode = viewMode ?? "Week",
+            ClassId = classId
+        });
     }
 }

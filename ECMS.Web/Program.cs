@@ -1,8 +1,10 @@
 using ECMS.Web.Data;
 using ECMS.Web.Models;
+using ECMS.Web.Options;
 using ECMS.Web.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +12,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options
+        .UseSqlServer(connectionString)
+        .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.MappedEntityTypeIgnoredWarning)));
+
+builder.Services.Configure<SchedulingOptions>(
+    builder.Configuration.GetSection(SchedulingOptions.SectionName));
 
 builder.Services
     .AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -23,7 +30,7 @@ builder.Services
         options.User.RequireUniqueEmail = true;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+    .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -33,6 +40,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<ScheduleConflictService>();
+builder.Services.AddScoped<ScheduleDateTimeService>();
 builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<ProfileAccountLookupService>();
 

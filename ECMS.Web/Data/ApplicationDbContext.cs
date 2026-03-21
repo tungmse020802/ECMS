@@ -2,6 +2,7 @@ using ECMS.Web.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ECMS.Web.Data;
 
@@ -30,13 +31,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(builder);
 
+        var utcDateTimeConverter = new ValueConverter<DateTime, DateTime>(
+            value => value,
+            value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
         builder.Entity<ApplicationUser>().ToTable("Users");
         builder.Entity<ApplicationRole>().ToTable("Roles");
-        builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
-        builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
-        builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
         builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
         builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
+        builder.Ignore<IdentityUserClaim<string>>();
+        builder.Ignore<IdentityUserLogin<string>>();
+        builder.Ignore<IdentityUserToken<string>>();
 
         builder.Entity<ApplicationUser>()
             .Property(user => user.FullName)
@@ -70,6 +75,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .Property(schedule => schedule.Status)
             .HasConversion<string>()
             .HasMaxLength(30);
+
+        builder.Entity<Schedule>()
+            .Property(schedule => schedule.StartAtUtc)
+            .HasConversion(utcDateTimeConverter);
+
+        builder.Entity<Schedule>()
+            .Property(schedule => schedule.EndAtUtc)
+            .HasConversion(utcDateTimeConverter);
 
         builder.Entity<Attendance>()
             .Property(attendance => attendance.Status)
@@ -116,6 +129,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .WithMany(room => room.Schedules)
             .HasForeignKey(schedule => schedule.RoomId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Schedule>()
+            .HasIndex(schedule => new { schedule.StartAtUtc, schedule.EndAtUtc });
+
+        builder.Entity<Schedule>()
+            .HasIndex(schedule => new { schedule.TeacherId, schedule.StartAtUtc, schedule.EndAtUtc });
 
         builder.Entity<Attendance>()
             .HasIndex(attendance => new { attendance.ScheduleId, attendance.StudentId })

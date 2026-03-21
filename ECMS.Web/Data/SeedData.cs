@@ -18,6 +18,7 @@ public static class SeedData
         try
         {
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var scheduleDateTimeService = scope.ServiceProvider.GetRequiredService<Services.ScheduleDateTimeService>();
 
             logger.LogInformation("Starting automatic database migration and seed process.");
             await context.Database.MigrateAsync();
@@ -179,15 +180,23 @@ public static class SeedData
                 var classes = await context.Classes.OrderBy(courseClass => courseClass.Id).ToListAsync();
                 var rooms = await context.Rooms.OrderBy(room => room.Id).ToListAsync();
                 var teachers = await context.Teachers.OrderBy(teacher => teacher.Id).ToListAsync();
-                var nextMonday = DateTime.UtcNow.Date.AddDays(((int) DayOfWeek.Monday - (int) DateTime.UtcNow.DayOfWeek + 7) % 7);
+                var defaultTimeZone = scheduleDateTimeService.ResolveTimeZone();
+                var localToday = scheduleDateTimeService.GetLocalToday(defaultTimeZone);
+                var nextMonday = localToday.AddDays(((int) DayOfWeek.Monday - (int) localToday.DayOfWeek + 7) % 7);
+
+                scheduleDateTimeService.TryConvertLocalToUtc(nextMonday, new TimeSpan(8, 0, 0), defaultTimeZone, out var mondayMorningStartUtc, out _);
+                scheduleDateTimeService.TryConvertLocalToUtc(nextMonday, new TimeSpan(10, 0, 0), defaultTimeZone, out var mondayMorningEndUtc, out _);
+                scheduleDateTimeService.TryConvertLocalToUtc(nextMonday.AddDays(2), new TimeSpan(8, 0, 0), defaultTimeZone, out var wednesdayMorningStartUtc, out _);
+                scheduleDateTimeService.TryConvertLocalToUtc(nextMonday.AddDays(2), new TimeSpan(10, 0, 0), defaultTimeZone, out var wednesdayMorningEndUtc, out _);
+                scheduleDateTimeService.TryConvertLocalToUtc(nextMonday.AddDays(1), new TimeSpan(18, 30, 0), defaultTimeZone, out var tuesdayEveningStartUtc, out _);
+                scheduleDateTimeService.TryConvertLocalToUtc(nextMonday.AddDays(1), new TimeSpan(20, 0, 0), defaultTimeZone, out var tuesdayEveningEndUtc, out _);
 
                 context.Schedules.AddRange(
                     new Schedule
                     {
                         ClassId = classes[0].Id,
-                        ClassDate = nextMonday,
-                        StartTime = new TimeSpan(8, 0, 0),
-                        EndTime = new TimeSpan(10, 0, 0),
+                        StartAtUtc = mondayMorningStartUtc,
+                        EndAtUtc = mondayMorningEndUtc,
                         RoomId = rooms[0].Id,
                         TeacherId = teachers[0].Id,
                         Status = ScheduleStatus.Scheduled
@@ -195,9 +204,8 @@ public static class SeedData
                     new Schedule
                     {
                         ClassId = classes[0].Id,
-                        ClassDate = nextMonday.AddDays(2),
-                        StartTime = new TimeSpan(8, 0, 0),
-                        EndTime = new TimeSpan(10, 0, 0),
+                        StartAtUtc = wednesdayMorningStartUtc,
+                        EndAtUtc = wednesdayMorningEndUtc,
                         RoomId = rooms[0].Id,
                         TeacherId = teachers[0].Id,
                         Status = ScheduleStatus.Scheduled
@@ -205,9 +213,8 @@ public static class SeedData
                     new Schedule
                     {
                         ClassId = classes[1].Id,
-                        ClassDate = nextMonday.AddDays(1),
-                        StartTime = new TimeSpan(18, 30, 0),
-                        EndTime = new TimeSpan(20, 0, 0),
+                        StartAtUtc = tuesdayEveningStartUtc,
+                        EndAtUtc = tuesdayEveningEndUtc,
                         RoomId = rooms[1].Id,
                         TeacherId = teachers[1].Id,
                         Status = ScheduleStatus.Scheduled

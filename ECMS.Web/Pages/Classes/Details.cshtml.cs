@@ -10,7 +10,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ECMS.Web.Pages.Classes;
 
 [Authorize(Roles = ApplicationRoles.Admin + "," + ApplicationRoles.Staff)]
-public class DetailsModel(ApplicationDbContext context) : PageModel
+public class DetailsModel(
+    ApplicationDbContext context,
+    Services.ScheduleDateTimeService scheduleDateTimeService) : PageModel
 {
     public ClassDetailsViewModel? Class { get; private set; }
 
@@ -32,6 +34,13 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
             return NotFound();
         }
 
+        var timeZone = scheduleDateTimeService.ResolveTimeZone(HttpContext);
+        var nowUtc = DateTime.UtcNow;
+        var nextSchedule = courseClass.Schedules
+            .Where(schedule => scheduleDateTimeService.NormalizeUtc(schedule.StartAtUtc) >= nowUtc)
+            .OrderBy(schedule => schedule.StartAtUtc)
+            .FirstOrDefault();
+
         Class = new ClassDetailsViewModel
         {
             Id = courseClass.Id,
@@ -42,12 +51,9 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
             MaxStudents = courseClass.MaxStudents,
             StudentCount = courseClass.StudentClasses.Count,
             Status = courseClass.Status,
-            NextSessionDate = courseClass.Schedules
-                .Where(schedule => schedule.ClassDate >= DateTime.UtcNow.Date)
-                .OrderBy(schedule => schedule.ClassDate)
-                .ThenBy(schedule => schedule.StartTime)
-                .Select(schedule => (DateTime?)schedule.ClassDate)
-                .FirstOrDefault(),
+            NextSessionDate = nextSchedule is null
+                ? null
+                : scheduleDateTimeService.ConvertUtcToLocalRange(nextSchedule.StartAtUtc, nextSchedule.EndAtUtc, timeZone).LocalStart.Date,
             Students = courseClass.StudentClasses
                 .OrderBy(studentClass => studentClass.Student.FullName)
                 .Select(studentClass => new StudentItem
@@ -59,21 +65,10 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
                 })
                 .ToList(),
             Sessions = courseClass.Schedules
-                .OrderByDescending(schedule => schedule.ClassDate)
-                .ThenBy(schedule => schedule.StartTime)
+                .OrderByDescending(schedule => schedule.StartAtUtc)
+                .ThenBy(schedule => schedule.EndAtUtc)
                 .Take(6)
-                .Select(schedule => new ScheduleListItem
-                {
-                    Id = schedule.Id,
-                    ClassId = schedule.ClassId,
-                    ClassName = courseClass.ClassName,
-                    ClassDate = schedule.ClassDate,
-                    StartTime = schedule.StartTime,
-                    EndTime = schedule.EndTime,
-                    RoomName = schedule.Room.RoomName,
-                    TeacherName = schedule.Teacher.FullName,
-                    Status = schedule.Status
-                })
+                .Select(schedule => scheduleDateTimeService.BuildScheduleListItem(schedule, timeZone, canModify: false))
                 .ToList()
         };
 

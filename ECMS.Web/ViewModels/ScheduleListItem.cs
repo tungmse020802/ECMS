@@ -10,6 +10,10 @@ public class ScheduleListItem
 
     public string ClassName { get; set; } = string.Empty;
 
+    public DateTime StartAtUtc { get; set; }
+
+    public DateTime EndAtUtc { get; set; }
+
     public DateTime ClassDate { get; set; }
 
     public TimeSpan StartTime { get; set; }
@@ -21,4 +25,6 @@ public class ScheduleListItem
     public string TeacherName { get; set; } = string.Empty;
 
     public ScheduleStatus Status { get; set; }
+
+    public bool CanModify { get; set; }
 }

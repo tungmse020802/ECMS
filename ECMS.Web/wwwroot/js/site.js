@@ -1,4 +1,22 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+(() => {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!browserTimeZone) {
+        return;
+    }
 
-// Write your JavaScript code.
+    const cookieName = "ecms_timezone";
+    const encodedTimeZone = encodeURIComponent(browserTimeZone);
+    const existingCookie = document.cookie
+        .split("; ")
+        .find((cookie) => cookie.startsWith(`${cookieName}=`));
+
+    if (existingCookie !== `${cookieName}=${encodedTimeZone}`) {
+        document.cookie = `${cookieName}=${encodedTimeZone}; path=/; max-age=31536000; samesite=lax`;
+    }
+
+    document.querySelectorAll("[data-browser-timezone]").forEach((element) => {
+        if ("value" in element) {
+            element.value = browserTimeZone;
+        }
+    });
+})();

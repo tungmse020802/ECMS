@@ -10,12 +10,11 @@ public class Schedule
 
     public CourseClass Class { get; set; } = null!;
 
-    [DataType(DataType.Date)]
-    public DateTime ClassDate { get; set; }
+    [DataType(DataType.DateTime)]
+    public DateTime StartAtUtc { get; set; }
 
-    public TimeSpan StartTime { get; set; }
-
-    public TimeSpan EndTime { get; set; }
+    [DataType(DataType.DateTime)]
+    public DateTime EndAtUtc { get; set; }
 
     public int RoomId { get; set; }
 

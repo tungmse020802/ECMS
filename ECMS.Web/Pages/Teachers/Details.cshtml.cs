@@ -9,13 +9,15 @@ using Microsoft.EntityFrameworkCore;
 namespace ECMS.Web.Pages.Teachers;
 
 [Authorize(Roles = ApplicationRoles.Admin + "," + ApplicationRoles.Staff)]
-public class DetailsModel(ApplicationDbContext context) : PageModel
+public class DetailsModel(
+    ApplicationDbContext context,
+    Services.ScheduleDateTimeService scheduleDateTimeService) : PageModel
 {
     public TeacherDetailsViewModel? Teacher { get; private set; }
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
-        var today = DateTime.UtcNow.Date;
+        var nowUtc = DateTime.UtcNow;
 
         var teacher = await context.Teachers
             .AsNoTracking()
@@ -33,6 +35,8 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
             return NotFound();
         }
 
+        var timeZone = scheduleDateTimeService.ResolveTimeZone(HttpContext);
+
         Teacher = new TeacherDetailsViewModel
         {
             Id = teacher.Id,
@@ -42,7 +46,7 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
             ClassCount = teacher.Classes.Count,
             UpcomingSessionCount = teacher.Schedules.Count(schedule =>
                 schedule.Status == ScheduleStatus.Scheduled &&
-                schedule.ClassDate >= today),
+                schedule.StartAtUtc >= nowUtc),
             Classes = teacher.Classes
                 .OrderBy(courseClass => courseClass.ClassName)
                 .Select(courseClass => new ClassListItem
@@ -56,20 +60,25 @@ public class DetailsModel(ApplicationDbContext context) : PageModel
                 })
                 .ToList(),
             UpcomingSessions = teacher.Schedules
-                .Where(schedule => schedule.ClassDate >= today)
-                .OrderBy(schedule => schedule.ClassDate)
-                .ThenBy(schedule => schedule.StartTime)
+                .Where(schedule => scheduleDateTimeService.NormalizeUtc(schedule.StartAtUtc) >= nowUtc)
+                .OrderBy(schedule => schedule.StartAtUtc)
+                .ThenBy(schedule => schedule.EndAtUtc)
                 .Take(6)
-                .Select(schedule => new SessionListItem
+                .Select(schedule =>
                 {
-                    Id = schedule.Id,
-                    ClassId = schedule.ClassId,
-                    ClassName = schedule.Class.ClassName,
-                    ClassDate = schedule.ClassDate,
-                    StartTime = schedule.StartTime,
-                    EndTime = schedule.EndTime,
-                    RoomName = schedule.Room.RoomName,
-                    Status = schedule.Status
+                    var (localStart, localEnd) = scheduleDateTimeService.ConvertUtcToLocalRange(schedule.StartAtUtc, schedule.EndAtUtc, timeZone);
+
+                    return new SessionListItem
+                    {
+                        Id = schedule.Id,
+                        ClassId = schedule.ClassId,
+                        ClassName = schedule.Class.ClassName,
+                        ClassDate = localStart.Date,
+                        StartTime = localStart.TimeOfDay,
+                        EndTime = localEnd.TimeOfDay,
+                        RoomName = schedule.Room.RoomName,
+                        Status = schedule.Status
+                    };
                 })
                 .ToList()
         };

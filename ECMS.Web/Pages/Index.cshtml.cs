@@ -10,7 +10,8 @@ namespace ECMS.Web.Pages;
 
 public class IndexModel(
     ApplicationDbContext context,
-    UserProfileService userProfileService) : PageModel
+    UserProfileService userProfileService,
+    ScheduleDateTimeService scheduleDateTimeService) : PageModel
 {
     public bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
 
@@ -39,8 +40,9 @@ public class IndexModel(
 
         DisplayName = currentUser?.FullName ?? User.Identity!.Name ?? "User";
 
-        var today = DateTime.UtcNow.Date;
-        var weekEnd = today.AddDays(7);
+        var timeZone = scheduleDateTimeService.ResolveTimeZone(HttpContext);
+        var nowUtc = DateTime.UtcNow;
+        var weekEndUtc = nowUtc.AddDays(7);
 
         IQueryable<Schedule> scheduleQuery = context.Schedules
             .AsNoTracking()
@@ -126,27 +128,19 @@ public class IndexModel(
         }
 
         WeeklySessionCount = await scheduleQuery.CountAsync(
-            schedule => schedule.ClassDate >= today && schedule.ClassDate < weekEnd,
+            schedule => schedule.StartAtUtc >= nowUtc && schedule.StartAtUtc < weekEndUtc,
             cancellationToken);
 
-        UpcomingSchedules = await scheduleQuery
-            .Where(schedule => schedule.ClassDate >= today)
-            .OrderBy(schedule => schedule.ClassDate)
-            .ThenBy(schedule => schedule.StartTime)
+        var upcomingSchedules = await scheduleQuery
+            .Where(schedule => schedule.StartAtUtc >= nowUtc)
+            .OrderBy(schedule => schedule.StartAtUtc)
+            .ThenBy(schedule => schedule.EndAtUtc)
             .Take(5)
-            .Select(schedule => new ScheduleListItem
-            {
-                Id = schedule.Id,
-                ClassId = schedule.ClassId,
-                ClassName = schedule.Class.ClassName,
-                ClassDate = schedule.ClassDate,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                RoomName = schedule.Room.RoomName,
-                TeacherName = schedule.Teacher.FullName,
-                Status = schedule.Status
-            })
             .ToListAsync(cancellationToken);
+
+        UpcomingSchedules = upcomingSchedules
+            .Select(schedule => scheduleDateTimeService.BuildScheduleListItem(schedule, timeZone, canModify: false))
+            .ToList();
     }
 
     public record DashboardCard(string Title, string Caption, string Description, string PagePath);

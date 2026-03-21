@@ -8,9 +8,8 @@ public class ScheduleConflictService(ApplicationDbContext context)
 {
     public async Task<IReadOnlyList<string>> ValidateAsync(
         int classId,
-        DateTime classDate,
-        TimeSpan startTime,
-        TimeSpan endTime,
+        DateTime startAtUtc,
+        DateTime endAtUtc,
         int roomId,
         int teacherId,
         int? scheduleId = null,
@@ -18,7 +17,7 @@ public class ScheduleConflictService(ApplicationDbContext context)
     {
         List<string> errors = [];
 
-        if (startTime >= endTime)
+        if (startAtUtc >= endAtUtc)
         {
             errors.Add("Start time must be earlier than end time.");
             return errors;
@@ -27,10 +26,9 @@ public class ScheduleConflictService(ApplicationDbContext context)
         var schedules = await context.Schedules
             .Where(schedule =>
                 schedule.Status == ScheduleStatus.Scheduled &&
-                schedule.ClassDate.Date == classDate.Date &&
                 (!scheduleId.HasValue || schedule.Id != scheduleId.Value) &&
-                startTime < schedule.EndTime &&
-                endTime > schedule.StartTime)
+                startAtUtc < schedule.EndAtUtc &&
+                endAtUtc > schedule.StartAtUtc)
             .Select(schedule => new
             {
                 schedule.RoomId,

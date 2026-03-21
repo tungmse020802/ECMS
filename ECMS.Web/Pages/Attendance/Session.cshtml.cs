@@ -13,7 +13,8 @@ namespace ECMS.Web.Pages.Attendance;
 [Authorize(Roles = ApplicationRoles.Teacher)]
 public class SessionModel(
     ApplicationDbContext context,
-    UserProfileService userProfileService) : PageModel
+    UserProfileService userProfileService,
+    ScheduleDateTimeService scheduleDateTimeService) : PageModel
 {
     [BindProperty(SupportsGet = true)]
     public int Id { get; set; }
@@ -37,13 +38,16 @@ public class SessionModel(
             return NotFound();
         }
 
+        var timeZone = scheduleDateTimeService.ResolveTimeZone(HttpContext);
+        var (localStart, localEnd) = scheduleDateTimeService.ConvertUtcToLocalRange(schedule.StartAtUtc, schedule.EndAtUtc, timeZone);
+
         Session = new SessionSummary
         {
             Id = schedule.Id,
             ClassName = schedule.Class.ClassName,
-            ClassDate = schedule.ClassDate,
-            StartTime = schedule.StartTime,
-            EndTime = schedule.EndTime,
+            ClassDate = localStart.Date,
+            StartTime = localStart.TimeOfDay,
+            EndTime = localEnd.TimeOfDay,
             RoomName = schedule.Room.RoomName
         };
 

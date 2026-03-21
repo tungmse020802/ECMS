@@ -11,7 +11,8 @@ namespace ECMS.Web.Pages.Attendance;
 [Authorize(Roles = ApplicationRoles.Teacher)]
 public class IndexModel(
     ApplicationDbContext context,
-    UserProfileService userProfileService) : PageModel
+    UserProfileService userProfileService,
+    ScheduleDateTimeService scheduleDateTimeService) : PageModel
 {
     public List<AttendanceSessionRow> Sessions { get; private set; } = [];
 
@@ -23,23 +24,37 @@ public class IndexModel(
             return Forbid();
         }
 
-        Sessions = await context.Schedules
+        var timeZone = scheduleDateTimeService.ResolveTimeZone(HttpContext);
+
+        var schedules = await context.Schedules
             .AsNoTracking()
             .Where(schedule => schedule.TeacherId == teacher.Id)
-            .OrderByDescending(schedule => schedule.ClassDate)
-            .ThenBy(schedule => schedule.StartTime)
-            .Select(schedule => new AttendanceSessionRow
-            {
-                Id = schedule.Id,
-                ClassDate = schedule.ClassDate,
-                StartTime = schedule.StartTime,
-                EndTime = schedule.EndTime,
-                ClassName = schedule.Class.ClassName,
-                RoomName = schedule.Room.RoomName,
-                StudentCount = schedule.Class.StudentClasses.Count,
-                RecordedCount = schedule.Attendances.Count
-            })
+            .Include(schedule => schedule.Class)
+                .ThenInclude(courseClass => courseClass.StudentClasses)
+            .Include(schedule => schedule.Room)
+            .Include(schedule => schedule.Attendances)
+            .OrderByDescending(schedule => schedule.StartAtUtc)
+            .ThenBy(schedule => schedule.EndAtUtc)
             .ToListAsync(cancellationToken);
+
+        Sessions = schedules
+            .Select(schedule =>
+            {
+                var (localStart, localEnd) = scheduleDateTimeService.ConvertUtcToLocalRange(schedule.StartAtUtc, schedule.EndAtUtc, timeZone);
+
+                return new AttendanceSessionRow
+                {
+                    Id = schedule.Id,
+                    ClassDate = localStart.Date,
+                    StartTime = localStart.TimeOfDay,
+                    EndTime = localEnd.TimeOfDay,
+                    ClassName = schedule.Class.ClassName,
+                    RoomName = schedule.Room.RoomName,
+                    StudentCount = schedule.Class.StudentClasses.Count,
+                    RecordedCount = schedule.Attendances.Count
+                };
+            })
+            .ToList();
 
         return Page();
     }

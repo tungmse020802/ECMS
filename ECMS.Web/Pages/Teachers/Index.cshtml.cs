@@ -14,7 +14,7 @@ public class IndexModel(ApplicationDbContext context) : PageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        var today = DateTime.UtcNow.Date;
+        var nowUtc = DateTime.UtcNow;
 
         Teachers = await context.Teachers
             .AsNoTracking()
@@ -33,7 +33,7 @@ public class IndexModel(ApplicationDbContext context) : PageModel
                 ClassCount = teacher.Classes.Count,
                 UpcomingSessionCount = teacher.Schedules.Count(schedule =>
                     schedule.Status == ScheduleStatus.Scheduled &&
-                    schedule.ClassDate >= today)
+                    schedule.StartAtUtc >= nowUtc)
             })
             .ToListAsync(cancellationToken);
     }

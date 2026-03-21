@@ -34,4 +34,7 @@ public class ScheduleFormModel
 
     [Display(Name = "Status")]
     public ScheduleStatus Status { get; set; } = ScheduleStatus.Scheduled;
+
+    [Required]
+    public string TimeZoneId { get; set; } = string.Empty;
 }
